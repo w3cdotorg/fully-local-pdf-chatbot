@@ -10,6 +10,7 @@ import { WebPDFLoader } from "langchain/document_loaders/web/pdf";
 
 import { HuggingFaceTransformersEmbeddings } from "@langchain/community/embeddings/hf_transformers";
 import { VoyVectorStore } from "@langchain/community/vectorstores/voy";
+import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { ChatOllama } from "@langchain/community/chat_models/ollama";
 import {
   ChatPromptTemplate,
@@ -24,20 +25,49 @@ import {
 } from "@langchain/core/messages";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 
-const embeddings = new HuggingFaceTransformersEmbeddings({
+/*const embeddings = new HuggingFaceTransformersEmbeddings({
   modelName: "nomic-ai/nomic-embed-text-v1",
   // Can use "Xenova/all-MiniLM-L6-v2" for less powerful but faster embeddings
+});
+*/
+
+/*const embeddings = new OllamaEmbeddings({
+  model: "llama2:7b",
+  baseUrl: "http://localhost:11434",
+  requestOptions: {
+    useMMap: true,
+    numThread: 6,
+  },
+});*/
+
+/*const embeddings = new OllamaEmbeddings({
+  model: "nomic-embed-text",
+  baseUrl: "http://localhost:11434",
+});*/
+
+/* mistral:instruct semble le mieux ; all-minilm:l6-v2 moyen. initial : nomic-embed-text */
+const embeddings = new OllamaEmbeddings({
+  model: "llama2:13b",
+  baseUrl: "http://localhost:11434",
 });
 
 const voyClient = new VoyClient();
 const vectorstore = new VoyVectorStore(voyClient, embeddings);
-const ollama = new ChatOllama({
+
+/*const ollama = new ChatOllama({
   baseUrl: "http://localhost:11435",
   temperature: 0.3,
   model: "mistral",
+});*/
+
+/* mistral : pas convainquant... zephyr non plus ! */
+const ollama = new ChatOllama({
+  baseUrl: "http://localhost:11435",
+  temperature: 0.3,
+  model: "llama2:13b",
 });
 
-const RESPONSE_SYSTEM_TEMPLATE = `You are an experienced researcher, expert at interpreting and answering questions based on provided sources. Using the provided context, answer the user's question to the best of your ability using the resources provided.
+/*const RESPONSE_SYSTEM_TEMPLATE = `You are an experienced researcher, expert at interpreting and answering questions based on provided sources. Using the provided context, answer the user's question to the best of your ability using the resources provided.
 Generate a concise answer for a given question based solely on the provided search results (URL and content). You must only use information from the provided search results. Use an unbiased and journalistic tone. Combine search results together into a coherent answer. Do not repeat text.
 If there is nothing in the context relevant to the question at hand, just say "Hmm, I'm not sure." Don't try to make up an answer.
 Anything between the following \`context\` html blocks is retrieved from a knowledge bank, not part of the conversation with the user.
@@ -45,7 +75,17 @@ Anything between the following \`context\` html blocks is retrieved from a knowl
     {context}
 <context/>
 
-REMEMBER: If there is no relevant information within the context, just say "Hmm, I'm not sure." Don't try to make up an answer. Anything between the preceding 'context' html blocks is retrieved from a knowledge bank, not part of the conversation with the user.`;
+REMEMBER: If there is no relevant information within the context, just say "Hmm, I'm not sure." Don't try to make up an answer. Anything between the preceding 'context' html blocks is retrieved from a knowledge bank, not part of the conversation with the user.`;*/
+
+const RESPONSE_SYSTEM_TEMPLATE = `Tu es un chercheur expérimenté, expert dans l'interprétation et la réponse à des questions posées sur des sources données. En utilisant le contexte fourni, répond en français aux questions de l'utilisateur du mieux que tu peux, en utilisant les ressources fournies.
+Génère une réponse concise pour une question donnée, basée sur les résultats de la recherche (URL et contenu), en français. Tu dois utiliser uniquement l'information fournie par les résultats de recherche. Prends un ton journalistique, non biaisé. Combine les résultats ensemble dans une réponse cohérente. Ne répète pas de texte. Réponds toujours en français.
+S'il n'y a rien de pertinent dans le contexte par rapport à la question posée, réponds juste "Hmm, je ne suis pas sûr." N'essaie pas d'inventer une réponse.
+Tout ce qui suit entre les blocs html \`context\` vient d'une banque de connaissances, et ne fait pas partie de la conversation avec l'utilisateur.
+<context>
+    {context}
+<context/>
+
+RAPPELLE-TOI : S'il n'y a rien de pertinent dans le contexte, réponds juste "Hmm, je ne suis pas sûr." N'essaie pas d'inventer une réponse. Tout ce qui est entre les blocs 'context' précédents vient d'une base de connaissances, et ne fait pas partie de la conversation avec l'utilisateur. Réponds en français.`;
 
 const responseChainPrompt = ChatPromptTemplate.fromMessages<{
   context: string;
@@ -61,10 +101,15 @@ const embedPDF = async (pdfBlob: Blob) => {
   const pdfLoader = new WebPDFLoader(pdfBlob, { parsedItemSeparator: " " });
   const docs = await pdfLoader.load();
 
-  const splitter = new RecursiveCharacterTextSplitter({
+/*  const splitter = new RecursiveCharacterTextSplitter({
     chunkSize: 500,
     chunkOverlap: 50,
-  });
+  });*/
+
+  const splitter = new RecursiveCharacterTextSplitter({
+  chunkSize: 1024,
+  chunkOverlap: 40,
+});
 
   const splitDocs = await splitter.splitDocuments(docs);
 
@@ -105,7 +150,8 @@ const queryVectorStore = async (messages: ChatWindowMessage[]) => {
     ["user", "{input}"],
     [
       "user",
-      "Given the above conversation, generate a natural language search query to look up in order to get information relevant to the conversation. Do not respond with anything except the query.",
+      // "Given the above conversation, generate a natural language search query to look up in order to get information relevant to the conversation. Do not respond with anything except the query.",
+      "Partant de la conversation au-dessus, génère une requête en langage naturel pour chercher, afin de trouver l'information pertinente pour la conversation. Ne réponds avec rien sauf la requête.",
     ],
   ]);
 
