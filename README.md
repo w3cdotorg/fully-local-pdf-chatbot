@@ -1,5 +1,15 @@
 # 🏠 Fully Client-Side Chat Over Documents
 
+## Changes on this repo
+
+Code has been changed to replace embeddings with ollama embeddings. Currently using llama2:13b for embeddings and chat.
+
+Prompt has been replaced so that the chatbot will prioritize replying in French.
+
+**Code might change, I'm trying what chunkSize and chunkOverlap settings work best for a 100+ page PDF.**
+
+## Original README.md below
+
 Yes, it's another chat over documents implementation... but this one is entirely local!
 
 ![](/public/images/demo.gif)
