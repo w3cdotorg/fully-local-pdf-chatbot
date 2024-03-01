@@ -1,6 +1,6 @@
 # 🏠 Fully Client-Side Chat Over Documents
 
-## Changes on this repo
+## Changes in this repo
 
 Code has been changed to replace embeddings with ollama embeddings. Currently using llama2:13b for embeddings and chat.
 

@@ -47,7 +47,7 @@ import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 
 /* mistral:instruct semble le mieux ; all-minilm:l6-v2 moyen. initial : nomic-embed-text */
 const embeddings = new OllamaEmbeddings({
-  model: "llama2:13b",
+  model: "mistral",
   baseUrl: "http://localhost:11434",
 });
 
