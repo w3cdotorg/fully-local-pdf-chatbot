@@ -2,7 +2,7 @@
 
 ## Changes in this repo
 
-Code has been changed to replace embeddings with ollama embeddings. Currently using llama2:13b for embeddings and chat.
+Code has been changed to replace embeddings with ollama embeddings. Currently using mistral for embeddings and llama2:13b for chat.
 
 Prompt has been replaced so that the chatbot will prioritize replying in French.
 
